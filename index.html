@@ -36,6 +36,13 @@ const Download = ({ className }) => <svg className={className} fill="none" strok
 // Dummy variable to prevent ReferenceErrors for Recharts components
 const Recharts = {};
 
+// Dummy component for charts (replaces Recharts usage)
+const DashboardChart = ({ data, dataKey, chartType, title }) => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg text-gray-500 text-sm">
+        <p>Chart functionality disabled (Missing library).</p>
+    </div>
+);
+
 // 2. MAIN COMPONENT DEFINITION
 // ... rest of the code ...
 const CommissionTracker = () => {
