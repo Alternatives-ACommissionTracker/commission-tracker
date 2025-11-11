@@ -13,728 +13,900 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
+// 1. IMPORTS & ICONS (Required from 'lucide-react')
 const { useState, useEffect } = React;
-const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } = Recharts;
+const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, Legend } = Recharts;
+// Mock icons - In a real setup, these would be imported from lucide-react
+const DollarSign = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM8 14h8m-4-8v8m0-8a4 4 0 0 1 4 4m-4-4a4 4 0 0 0-4 4"/></svg>;
+const Eye = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M2 12s3 7 10 7 10-7 10-7-3-7-10-7-10 7-10 7z"/><circle cx="12" cy="12" r="3"/></svg>;
+const EyeOff = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-10-7-10-7a10 10 0 0 1 5.48-4.32M10.87 5.09A10.06 10.06 0 0 1 12 5c7 0 10 7 10 7a10.07 10.07 0 0 1-2.45 6.09M2 2l20 20"/></svg>;
+const TrendingUp = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 20V4M8 8l4-4 4 4M4 16l4-4 4-4 4 4 4-4"/></svg>;
+const Users = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.74"/></svg>;
+const History = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2v10l4.5 4.5"/><path d="M12 7a5 5 0 1 0 5 5h-5"/></svg>;
+const Plus = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>;
+const Edit2 = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>;
+const Trash2 = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+const Check = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>;
+const X = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>;
+const Download = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>;
 
-const Icon = ({ d, ...props }) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    {d.map((path, i) => typeof path === 'string' ? <path key={i} d={path} /> : React.cloneElement(path, { key: i }))}
-  </svg>
-);
+// 2. MAIN COMPONENT DEFINITION
+const CommissionTracker = () => {
+    // --- State Initialization ---
+    const [salespeople, setSalespeople] = useState(() => JSON.parse(localStorage.getItem('salespeople')) || [
+        { id: 1, name: 'John Smith', code: 'JOSM', commission: 5, email: 'john@example.com' },
+        { id: 2, name: 'Alice Johnson', code: 'ALJO', commission: 7.5, email: 'alice@example.com' },
+    ]);
+    const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('transactions')) || [
+        { id: 101, date: '2024-10-01', code: 'JOSM', productName: 'Premium Service Pkg', amount: 500.00, quantity: 1, commissionRate: 5, commission: 25.00, paymentStatus: 'pending', salespersonName: 'John Smith' },
+        { id: 102, date: '2024-10-05', code: 'ALJO', productName: 'Basic Product License', amount: 200.00, quantity: 1, commissionRate: 7.5, commission: 15.00, paymentStatus: 'paid', salespersonName: 'Alice Johnson' },
+        { id: 103, date: '2024-10-10', code: 'JOSM', productName: 'Enterprise Suite', amount: 1200.00, quantity: 1, commissionRate: 5, commission: 60.00, paymentStatus: 'pending', salespersonName: 'John Smith' },
+    ]);
+    const [payments, setPayments] = useState(() => JSON.parse(localStorage.getItem('payments')) || [
+        { id: 1, date: new Date().toISOString(), code: 'ALJO', salespersonName: 'Alice Johnson', amount: 15.00, transactionIds: [102] }
+    ]);
 
-const DollarSign = (p) => <Icon {...p} d={[<line x1="12" y1="1" x2="12" y2="23"/>, "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"]} />;
-const Users = (p) => <Icon {...p} d={["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2", <circle cx="9" cy="7" r="4"/>, "M23 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75"]} />;
-const TrendingUp = (p) => <Icon {...p} d={[<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>, <polyline points="17 6 23 6 23 12"/>]} />;
-const History = (p) => <Icon {...p} d={["M3 3v5h5", "M3.05 13A9 9 0 1 0 6 5.3L3 8", "M12 7v5l4 2"]} />;
-const Plus = (p) => <Icon {...p} d={[<line x1="12" y1="5" x2="12" y2="19"/>, <line x1="5" y1="12" x2="19" y2="12"/>]} />;
-const Trash2 = (p) => <Icon {...p} d={[<polyline points="3 6 5 6 21 6"/>, "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", <line x1="10" y1="11" x2="10" y2="17"/>, <line x1="14" y1="11" x2="14" y2="17"/>]} />;
-const Edit2 = (p) => <Icon {...p} d={["M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"]} />;
-const Check = (p) => <Icon {...p} d={[<polyline points="20 6 9 17 4 12"/>]} />;
-const X = (p) => <Icon {...p} d={[<line x1="18" y1="6" x2="6" y2="18"/>, <line x1="6" y1="6" x2="18" y2="18"/>]} />;
-const Eye = (p) => <Icon {...p} d={["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z", <circle cx="12" cy="12" r="3"/>]} />;
-const EyeOff = (p) => <Icon {...p} d={["M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24", <line x1="1" y1="1" x2="23" y2="23"/>]} />;
-const Download = (p) => <Icon {...p} d={["M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", <polyline points="7 10 12 15 17 10"/>, <line x1="12" y1="15" x2="12" y2="3"/>]} />;
+    const [currentUser, setCurrentUser] = useState(null);
+    const [isAdminLogin, setIsAdminLogin] = useState(true);
+    const [loginCode, setLoginCode] = useState('');
+    const [adminPassword, setAdminPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [activeTab, setActiveTab] = useState('dashboard');
 
-function CommissionTracker() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [salespeople, setSalespeople] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [loginCode, setLoginCode] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [isAdminLogin, setIsAdminLogin] = useState(false);
-  const [newSalesperson, setNewSalesperson] = useState({ name: '', code: '', commission: '', email: '' });
-  const [newTransaction, setNewTransaction] = useState({ code: '', productName: '', quantity: '1', unitPrice: '', amount: '', date: new Date().toISOString().split('T')[0] });
-  const [editingSalesperson, setEditingSalesperson] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [dateFilter, setDateFilter] = useState('all');
-  const [customMonth, setCustomMonth] = useState(new Date().toISOString().substring(0, 7));
-  const [customYear, setCustomYear] = useState(new Date().getFullYear().toString());
+    const [newSalesperson, setNewSalesperson] = useState({ name: '', code: '', commission: 5, email: '' });
+    const [editingSalesperson, setEditingSalesperson] = useState(null);
+    const [newTransaction, setNewTransaction] = useState({ code: '', productName: '', quantity: 1, unitPrice: 0, amount: 0, date: new Date().toISOString().substring(0, 10) });
 
-  useEffect(() => {
-    const sp = localStorage.getItem('commissionSalespeople');
-    const tr = localStorage.getItem('commissionTransactions');
-    const py = localStorage.getItem('commissionPayments');
-    const pw = localStorage.getItem('commissionAdminPassword');
-    if (sp) setSalespeople(JSON.parse(sp));
-    if (tr) setTransactions(JSON.parse(tr));
-    if (py) setPayments(JSON.parse(py));
-    if (!pw) localStorage.setItem('commissionAdminPassword', 'admin123');
-  }, []);
+    const [dateFilter, setDateFilter] = useState('all');
+    const [customMonth, setCustomMonth] = useState(new Date().toISOString().substring(0, 7));
+    const [customYear, setCustomYear] = useState(new Date().getFullYear().toString());
 
-  useEffect(() => { localStorage.setItem('commissionSalespeople', JSON.stringify(salespeople)); }, [salespeople]);
-  useEffect(() => { localStorage.setItem('commissionTransactions', JSON.stringify(transactions)); }, [transactions]);
-  useEffect(() => { localStorage.setItem('commissionPayments', JSON.stringify(payments)); }, [payments]);
+    // --- Save to LocalStorage Effect ---
+    useEffect(() => {
+        localStorage.setItem('salespeople', JSON.stringify(salespeople));
+    }, [salespeople]);
 
-  const handleLogin = () => {
-    if (isAdminLogin) {
-      if (adminPassword === localStorage.getItem('commissionAdminPassword')) {
-        setCurrentUser({ type: 'admin', name: 'Administrator' });
+    useEffect(() => {
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+    }, [transactions]);
+
+    useEffect(() => {
+        localStorage.setItem('payments', JSON.stringify(payments));
+    }, [payments]);
+
+    // --- Function Definitions ---
+    const handleLogin = () => {
+        if (isAdminLogin) {
+            if (adminPassword === 'admin123') {
+                setCurrentUser({ id: 0, name: 'Admin', type: 'admin' });
+            } else {
+                alert('Invalid Admin Password');
+            }
+        } else {
+            const user = salespeople.find(sp => sp.code === loginCode.toUpperCase());
+            if (user) {
+                setCurrentUser({ ...user, type: 'salesperson' });
+            } else {
+                alert('Invalid Salesperson Code');
+            }
+        }
+    };
+
+    const handleLogout = () => {
+        setCurrentUser(null);
         setAdminPassword('');
-      } else alert('Invalid admin password');
-    } else {
-      const sp = salespeople.find(s => s.code.toLowerCase() === loginCode.toLowerCase());
-      if (sp) { setCurrentUser({ type: 'salesperson', ...sp }); setLoginCode(''); }
-      else alert('Invalid salesperson code');
-    }
-  };
-
-  const handleLogout = () => { setCurrentUser(null); setActiveTab('dashboard'); };
-  const generateCode = () => setNewSalesperson({ ...newSalesperson, code: 'SP' + Math.random().toString(36).substring(2, 8).toUpperCase() });
-
-  const addSalesperson = () => {
-    if (!newSalesperson.name || !newSalesperson.code || !newSalesperson.commission) return alert('Please fill in name, code, and commission');
-    const com = parseFloat(newSalesperson.commission);
-    if (com <= 0 || com > 100) return alert('Commission must be between 0 and 100%');
-    if (salespeople.find(s => s.code.toLowerCase() === newSalesperson.code.toLowerCase())) return alert('This code already exists');
-    setSalespeople([...salespeople, { id: Date.now(), name: newSalesperson.name, code: newSalesperson.code.toUpperCase(), commission: com, email: newSalesperson.email, createdDate: new Date().toISOString() }]);
-    setNewSalesperson({ name: '', code: '', commission: '', email: '' });
-  };
-
-  const deleteSalesperson = (id) => {
-    if (window.confirm('Delete this salesperson and all their transactions?')) {
-      const sp = salespeople.find(s => s.id === id);
-      setSalespeople(salespeople.filter(s => s.id !== id));
-      setTransactions(transactions.filter(t => t.code !== sp.code));
-    }
-  };
-
-  const saveEditSalesperson = () => {
-    const com = parseFloat(editingSalesperson.commission);
-    if (com <= 0 || com > 100) return alert('Commission must be between 0 and 100%');
-    setSalespeople(salespeople.map(s => s.id === editingSalesperson.id ? editingSalesperson : s));
-    setEditingSalesperson(null);
-  };
-
-  const handleQuantityOrPriceChange = (field, value) => {
-    const upd = { ...newTransaction, [field]: value };
-    if (upd.quantity && upd.unitPrice) {
-      const qty = parseFloat(upd.quantity), price = parseFloat(upd.unitPrice);
-      if (!isNaN(qty) && !isNaN(price)) upd.amount = (qty * price).toFixed(2);
-    }
-    setNewTransaction(upd);
-  };
-
-  const addTransaction = () => {
-    if (!newTransaction.code || !newTransaction.productName || !newTransaction.amount) return alert('Please fill in code, product name, and amount');
-    const amt = parseFloat(newTransaction.amount), qty = parseInt(newTransaction.quantity);
-    if (amt <= 0 || qty <= 0) return alert('Amount and quantity must be greater than 0');
-    const sp = salespeople.find(s => s.code.toLowerCase() === newTransaction.code.toLowerCase());
-    if (!sp) return alert('Invalid salesperson code');
-    const com = (amt * sp.commission) / 100;
-    setTransactions([{ id: Date.now(), code: sp.code, salespersonName: sp.name, productName: newTransaction.productName, quantity: qty, amount: amt, commission: com, commissionRate: sp.commission, date: newTransaction.date, paymentStatus: 'pending' }, ...transactions]);
-    setNewTransaction({ code: '', productName: '', quantity: '1', unitPrice: '', amount: '', date: new Date().toISOString().split('T')[0] });
-  };
-
-  const deleteTransaction = (id) => { if (window.confirm('Delete this transaction?')) setTransactions(transactions.filter(t => t.id !== id)); };
-
-  const markAsPaid = (tid) => {
-    const t = transactions.find(tx => tx.id === tid);
-    if (t.paymentStatus === 'pending') {
-      setTransactions(transactions.map(tx => tx.id === tid ? { ...tx, paymentStatus: 'paid', paidDate: new Date().toISOString() } : tx));
-      setPayments([...payments, { id: Date.now(), transactionId: tid, code: t.code, salespersonName: t.salespersonName, amount: t.commission, date: new Date().toISOString() }]);
-    }
-  };
-
-  const markAsPending = (tid) => {
-    const t = transactions.find(tx => tx.id === tid);
-    if (t.paymentStatus === 'paid') {
-      setTransactions(transactions.map(tx => tx.id === tid ? { ...tx, paymentStatus: 'pending', paidDate: null } : tx));
-      setPayments(payments.filter(p => p.transactionId !== tid));
-    }
-  };
-
-  const getSalespersonStats = (code) => {
-    const st = transactions.filter(t => t.code === code);
-    return {
-      totalSales: st.reduce((s, t) => s + t.amount, 0),
-      totalCommission: st.reduce((s, t) => s + t.commission, 0),
-      pendingCommission: st.filter(t => t.paymentStatus === 'pending').reduce((s, t) => s + t.commission, 0),
-      paidCommission: st.filter(t => t.paymentStatus === 'paid').reduce((s, t) => s + t.commission, 0),
-      count: st.length
-    };
-  };
-
-  const getTopPerformers = () => salespeople.map(s => ({ ...s, ...getSalespersonStats(s.code) })).sort((a, b) => b.totalCommission - a.totalCommission);
-
-  const getMonthlyData = () => {
-    const m = {};
-    transactions.forEach(t => {
-      const mo = t.date.substring(0, 7);
-      if (!m[mo]) m[mo] = { sales: 0, commissions: 0 };
-      m[mo].sales += t.amount;
-      m[mo].commissions += t.commission;
-    });
-    return Object.entries(m).sort(([a], [b]) => a.localeCompare(b)).map(([month, data]) => ({ month, ...data }));
-  };
-
-  const getFilteredTransactions = () => {
-    if (dateFilter === 'all') return transactions;
-    if (dateFilter === 'month') return transactions.filter(t => t.date.substring(0, 7) === customMonth);
-    if (dateFilter === 'year') return transactions.filter(t => t.date.substring(0, 4) === customYear);
-    return transactions;
-  };
-
-  const getFilteredStats = () => {
-    const f = getFilteredTransactions();
-    return {
-      totalSales: f.reduce((s, t) => s + t.amount, 0),
-      totalCommissions: f.reduce((s, t) => s + t.commission, 0),
-      pendingPayments: f.filter(t => t.paymentStatus === 'pending').reduce((s, t) => s + t.commission, 0),
-      transactionCount: f.length
-    };
-  };
-
-  const exportToCSV = () => {
-    const h = ['Date', 'Salesperson', 'Code', 'Product', 'Qty', 'Sale', 'Com%', 'Com$', 'Status'];
-    const r = transactions.map(t => [t.date, t.salespersonName, t.code, t.productName, t.quantity, t.amount.toFixed(2), t.commissionRate + '%', t.commission.toFixed(2), t.paymentStatus]);
-    const csv = [h, ...r].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'commission-report.csv';
-    a.click();
-  };
-
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-          <div className="text-center mb-8">
-            <DollarSign className="w-16 h-16 mx-auto text-blue-600 mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800">Commission Tracker</h1>
-            <p className="text-gray-600 mt-2">Sales Commission Management</p>
-          </div>
-          <div className="flex gap-2 mb-6">
-            <button onClick={() => setIsAdminLogin(false)} className={`flex-1 py-2 rounded-lg font-medium ${!isAdminLogin ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>Salesperson</button>
-            <button onClick={() => setIsAdminLogin(true)} className={`flex-1 py-2 rounded-lg font-medium ${isAdminLogin ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>Admin</button>
-          </div>
-          <div className="space-y-4">
-            {isAdminLogin ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Admin Password</label>
-                <div className="relative">
-                  <input type={showPassword ? "text" : "password"} value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter password" />
-                  <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Default: admin123</p>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Salesperson Code</label>
-                <input type="text" value={loginCode} onChange={(e) => setLoginCode(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter your code" />
-              </div>
-            )}
-            <button onClick={handleLogin} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium">Login</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (currentUser.type === 'salesperson') {
-    const myTrans = transactions.filter(t => t.code === currentUser.code);
-    const stats = getSalespersonStats(currentUser.code);
-    const getProdSummary = () => {
-      const pm = {};
-      myTrans.forEach(t => {
-        if (!pm[t.productName]) pm[t.productName] = { name: t.productName, quantity: 0, sales: 0, commission: 0 };
-        pm[t.productName].quantity += t.quantity;
-        pm[t.productName].sales += t.amount;
-        pm[t.productName].commission += t.commission;
-      });
-      return Object.values(pm).sort((a, b) => b.sales - a.sales);
+        setLoginCode('');
+        setActiveTab('dashboard');
     };
 
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <DollarSign className="w-8 h-8 text-blue-600 mr-2" />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-800">{currentUser.name}</h1>
-                  <p className="text-xs text-gray-600">Code: {currentUser.code}</p>
-                </div>
-              </div>
-              <button onClick={handleLogout} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Logout</button>
-            </div>
-          </div>
-        </nav>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm">Commission Rate</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{currentUser.commission}%</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm">Total Sales</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">${stats.totalSales.toFixed(2)}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm">Pending</p>
-              <p className="text-3xl font-bold text-orange-600 mt-2">${stats.pendingCommission.toFixed(2)}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600 text-sm">Paid</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">${stats.paidCommission.toFixed(2)}</p>
-            </div>
-          </div>
-          {myTrans.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Products I've Sold</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {getProdSummary().map((p, i) => (
-                  <div key={i} className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-800 mb-2">{p.name}</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between"><span className="text-gray-600">Qty:</span><span className="font-medium">{p.quantity}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-600">Sales:</span><span className="font-medium">${p.sales.toFixed(2)}</span></div>
-                      <div className="flex justify-between border-t pt-1 mt-1"><span className="text-gray-600">Commission:</span><span className="font-semibold text-blue-600">${p.commission.toFixed(2)}</span></div>
+    const generateCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let newCode;
+        do {
+            newCode = '';
+            for (let i = 0; i < 4; i++) {
+                newCode += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+        } while (salespeople.some(sp => sp.code === newCode));
+        setNewSalesperson(prev => ({ ...prev, code: newCode }));
+    };
+
+    const addSalesperson = () => {
+        if (newSalesperson.name && newSalesperson.code && newSalesperson.commission) {
+            if (salespeople.some(sp => sp.code === newSalesperson.code.toUpperCase())) {
+                alert('Salesperson Code already exists.');
+                return;
+            }
+            const commission = parseFloat(newSalesperson.commission);
+            const newSp = {
+                ...newSalesperson,
+                id: Date.now(),
+                commission: isNaN(commission) ? 0 : commission,
+                code: newSalesperson.code.toUpperCase(),
+                type: 'salesperson'
+            };
+            setSalespeople([...salespeople, newSp]);
+            setNewSalesperson({ name: '', code: '', commission: 5, email: '' });
+        } else {
+            alert('Please fill out all required fields.');
+        }
+    };
+
+    const deleteSalesperson = (id) => {
+        if (window.confirm('Are you sure you want to delete this salesperson? All associated transactions will remain but may look orphaned.')) {
+            setSalespeople(salespeople.filter(sp => sp.id !== id));
+        }
+    };
+
+    const saveEditSalesperson = () => {
+        if (editingSalesperson) {
+            const commission = parseFloat(editingSalesperson.commission);
+            setSalespeople(salespeople.map(sp =>
+                sp.id === editingSalesperson.id ? {
+                    ...editingSalesperson,
+                    commission: isNaN(commission) ? 0 : commission,
+                    code: editingSalesperson.code.toUpperCase(),
+                } : sp
+            ));
+            setEditingSalesperson(null);
+        }
+    };
+
+    const calculateCommission = (amount, code) => {
+        const salesperson = salespeople.find(sp => sp.code === code);
+        const rate = salesperson ? salesperson.commission : 0;
+        return (amount * (rate / 100));
+    };
+
+    const handleQuantityOrPriceChange = (field, value) => {
+        const newValue = parseFloat(value) || 0;
+        setNewTransaction(prev => {
+            let quantity = parseFloat(prev.quantity) || 0;
+            let unitPrice = parseFloat(prev.unitPrice) || 0;
+
+            if (field === 'quantity') {
+                quantity = newValue;
+            } else if (field === 'unitPrice') {
+                unitPrice = newValue;
+            }
+
+            const newAmount = quantity * unitPrice;
+            return { ...prev, [field]: value, amount: newAmount };
+        });
+    };
+
+    const addTransaction = () => {
+        const { code, productName, amount, quantity, date } = newTransaction;
+        const amountFloat = parseFloat(amount);
+        const quantityInt = parseInt(quantity);
+        const salesperson = salespeople.find(sp => sp.code === code);
+
+        if (code && productName && amountFloat > 0 && quantityInt > 0 && date && salesperson) {
+            const commission = calculateCommission(amountFloat, code);
+            const newTrans = {
+                id: Date.now(),
+                date,
+                code,
+                productName,
+                amount: amountFloat,
+                quantity: quantityInt,
+                commissionRate: salesperson.commission,
+                commission: commission,
+                paymentStatus: 'pending',
+                salespersonName: salesperson.name
+            };
+            setTransactions([newTrans, ...transactions]);
+            setNewTransaction({ code: '', productName: '', quantity: 1, unitPrice: 0, amount: 0, date: new Date().toISOString().substring(0, 10) });
+        } else {
+            alert('Please ensure all fields are valid, and a salesperson is selected.');
+        }
+    };
+
+    const deleteTransaction = (id) => {
+        if (window.confirm('Are you sure you want to delete this transaction?')) {
+            setTransactions(transactions.filter(t => t.id !== id));
+            setPayments(payments.filter(p => p.transactionIds.includes(id) === false));
+        }
+    };
+
+    const markAsPaid = (transactionId) => {
+        const transactionToPay = transactions.find(t => t.id === transactionId);
+        if (!transactionToPay || transactionToPay.paymentStatus === 'paid') return;
+
+        setTransactions(transactions.map(t =>
+            t.id === transactionId ? { ...t, paymentStatus: 'paid' } : t
+        ));
+
+        const newPayment = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            code: transactionToPay.code,
+            salespersonName: transactionToPay.salespersonName,
+            amount: transactionToPay.commission,
+            transactionIds: [transactionId]
+        };
+        setPayments([newPayment, ...payments]);
+    };
+
+    const markAsPending = (transactionId) => {
+        setTransactions(transactions.map(t =>
+            t.id === transactionId ? { ...t, paymentStatus: 'pending' } : t
+        ));
+        setPayments(payments.filter(p => p.transactionIds.includes(transactionId) === false));
+    };
+
+    const filterTransactions = (trans) => {
+        return trans.filter(t => {
+            const tDate = new Date(t.date);
+            if (dateFilter === 'all') return true;
+            if (dateFilter === 'month') {
+                const yearMonth = tDate.toISOString().substring(0, 7);
+                return yearMonth === customMonth;
+            }
+            if (dateFilter === 'year') {
+                const year = tDate.getFullYear().toString();
+                return year === customYear;
+            }
+            return true;
+        });
+    };
+
+    const getFilteredStats = () => {
+        const filteredTrans = filterTransactions(transactions);
+        return filteredTrans.reduce((acc, t) => {
+            acc.totalSales += t.amount;
+            acc.totalCommissions += t.commission;
+            if (t.paymentStatus === 'pending') {
+                acc.pendingPayments += t.commission;
+            }
+            acc.transactionCount += 1;
+            return acc;
+        }, { totalSales: 0, totalCommissions: 0, pendingPayments: 0, transactionCount: 0 });
+    };
+
+    const getSalespersonStats = (code) => {
+        const myTrans = transactions.filter(t => t.code === code);
+        return myTrans.reduce((acc, t) => {
+            acc.totalSales += t.amount;
+            if (t.paymentStatus === 'pending') {
+                acc.pendingCommission += t.commission;
+            } else {
+                acc.paidCommission += t.commission;
+            }
+            return acc;
+        }, { totalSales: 0, pendingCommission: 0, paidCommission: 0 });
+    };
+
+    const getTopPerformers = () => {
+        const filteredTrans = filterTransactions(transactions);
+        const performerMap = {};
+
+        salespeople.forEach(sp => {
+            performerMap[sp.code] = {
+                ...sp,
+                totalSales: 0,
+                totalCommission: 0,
+                pendingCommission: 0,
+                paidCommission: 0,
+                count: 0,
+            };
+        });
+
+        filteredTrans.forEach(t => {
+            const sp = performerMap[t.code];
+            if (sp) {
+                sp.totalSales += t.amount;
+                sp.totalCommission += t.commission;
+                sp.count += 1;
+                if (t.paymentStatus === 'pending') {
+                    sp.pendingCommission += t.commission;
+                } else {
+                    sp.paidCommission += t.commission;
+                }
+            }
+        });
+
+        return Object.values(performerMap).sort((a, b) => b.totalCommission - a.totalCommission);
+    };
+
+    const getMonthlyData = () => {
+        const filteredTrans = filterTransactions(transactions);
+        const monthlyMap = {};
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        filteredTrans.forEach(t => {
+            const date = new Date(t.date);
+            const year = date.getFullYear();
+            const monthIndex = date.getMonth();
+            const key = `${year}-${monthIndex}`;
+            const monthName = `${months[monthIndex]} ${year}`;
+
+            if (!monthlyMap[key]) {
+                monthlyMap[key] = { month: monthName, sales: 0, commissions: 0 };
+            }
+            monthlyMap[key].sales += t.amount;
+            monthlyMap[key].commissions += t.commission;
+        });
+
+        return Object.keys(monthlyMap)
+            .sort((a, b) => new Date(a.replace('-', '/')) - new Date(b.replace('-', '/')))
+            .map(key => monthlyMap[key]);
+    };
+
+    const exportToCSV = () => {
+        const data = getTopPerformers().map(sp => ({
+            Name: sp.name,
+            Code: sp.code,
+            Commission_Rate: `${sp.commission}%`,
+            Total_Sales: sp.totalSales.toFixed(2),
+            Total_Commission: sp.totalCommission.toFixed(2),
+            Pending_Commission: sp.pendingCommission.toFixed(2),
+            Paid_Commission: sp.paidCommission.toFixed(2),
+        }));
+
+        if (data.length === 0) {
+            alert("No data to export.");
+            return;
+        }
+
+        const header = Object.keys(data[0]).join(',');
+        const rows = data.map(obj => Object.values(obj).join(','));
+        const csvContent = [header, ...rows].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `commission_report_${new Date().toLocaleDateString()}.csv`);
+        link.click();
+    };
+
+    // 3. YOUR JSX CODE (STARTING WITH THE LOGIN BLOCK)
+    
+    // --- LOGIN SCREEN ---
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+                <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+                    <div className="text-center mb-8">
+                        <DollarSign className="w-16 h-16 mx-auto text-blue-600 mb-4" />
+                        <h1 className="text-3xl font-bold text-gray-800">Commission Tracker</h1>
+                        <p className="text-gray-600 mt-2">Sales Commission Management</p>
                     </div>
-                  </div>
-                ))}
-              </div>
+                    <div className="flex gap-2 mb-6">
+                        <button onClick={() => setIsAdminLogin(false)} className={`flex-1 py-2 rounded-lg font-medium ${!isAdminLogin ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>Salesperson</button>
+                        <button onClick={() => setIsAdminLogin(true)} className={`flex-1 py-2 rounded-lg font-medium ${isAdminLogin ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>Admin</button>
+                    </div>
+                    <div className="space-y-4">
+                        {isAdminLogin ? (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Admin Password</label>
+                                <div className="relative">
+                                    <input type={showPassword ? "text" : "password"} value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter password" />
+                                    <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">Default: admin123</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Salesperson Code</label>
+                                <input type="text" value={loginCode} onChange={(e) => setLoginCode(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleLogin()} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter your code" />
+                            </div>
+                        )}
+                        <button onClick={handleLogin} className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium">Login</button>
+                    </div>
+                </div>
             </div>
-          )}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Transaction History</h3>
-            {myTrans.length === 0 ? (
-              <p className="text-gray-600 text-center py-8">No transactions yet</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Product</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Qty</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Sale</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Commission</th>
-                      <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {myTrans.map(t => (
-                      <tr key={t.id}>
-                        <td className="px-4 py-3 text-gray-800">{t.date}</td>
-                        <td className="px-4 py-3 text-gray-800 font-medium">{t.productName}</td>
-                        <td className="px-4 py-3 text-right text-gray-600">{t.quantity}</td>
-                        <td className="px-4 py-3 text-right text-gray-800">${t.amount.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-blue-600">${t.commission.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${t.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
-                            {t.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
-                          </span>
-                        </td>
-                      </tr>
+        );
+    }
+    
+    // --- SALESPERSON DASHBOARD ---
+    if (currentUser.type === 'salesperson') {
+        const myTrans = transactions.filter(t => t.code === currentUser.code);
+        const stats = getSalespersonStats(currentUser.code);
+        const getProdSummary = () => {
+            const pm = {};
+            myTrans.forEach(t => {
+                if (!pm[t.productName]) pm[t.productName] = { name: t.productName, quantity: 0, sales: 0, commission: 0 };
+                pm[t.productName].quantity += t.quantity;
+                pm[t.productName].sales += t.amount;
+                pm[t.productName].commission += t.commission;
+            });
+            return Object.values(pm).sort((a, b) => b.sales - a.sales);
+        };
+
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <nav className="bg-white shadow-sm border-b">
+                    <div className="max-w-7xl mx-auto px-4 py-4">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center">
+                                <DollarSign className="w-8 h-8 text-blue-600 mr-2" />
+                                <div>
+                                    <h1 className="text-xl font-bold text-gray-800">{currentUser.name}</h1>
+                                    <p className="text-xs text-gray-600">Code: {currentUser.code}</p>
+                                </div>
+                            </div>
+                            <button onClick={handleLogout} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Logout</button>
+                        </div>
+                    </div>
+                </nav>
+                <div className="max-w-7xl mx-auto px-4 py-8">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <p className="text-gray-600 text-sm">Commission Rate</p>
+                            <p className="text-3xl font-bold text-blue-600 mt-2">{currentUser.commission}%</p>
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <p className="text-gray-600 text-sm">Total Sales</p>
+                            <p className="text-3xl font-bold text-gray-800 mt-2">${stats.totalSales.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <p className="text-gray-600 text-sm">Pending</p>
+                            <p className="text-3xl font-bold text-orange-600 mt-2">${stats.pendingCommission.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <p className="text-gray-600 text-sm">Paid</p>
+                            <p className="text-3xl font-bold text-green-600 mt-2">${stats.paidCommission.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    {myTrans.length > 0 && (
+                        <div className="bg-white rounded-lg shadow p-6 mb-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Products I've Sold</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {getProdSummary().map((p, i) => (
+                                    <div key={i} className="border border-gray-200 rounded-lg p-4">
+                                        <h4 className="font-semibold text-gray-800 mb-2">{p.name}</h4>
+                                        <div className="space-y-1 text-sm">
+                                            <div className="flex justify-between"><span className="text-gray-600">Qty:</span><span className="font-medium">{p.quantity}</span></div>
+                                            <div className="flex justify-between"><span className="text-gray-600">Sales:</span><span className="font-medium">${p.sales.toFixed(2)}</span></div>
+                                            <div className="flex justify-between border-t pt-1 mt-1"><span className="text-gray-600">Commission:</span><span className="font-semibold text-blue-600">${p.commission.toFixed(2)}</span></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Transaction History</h3>
+                        {myTrans.length === 0 ? (
+                            <p className="text-gray-600 text-center py-8">No transactions yet</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
+                                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Product</th>
+                                            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Qty</th>
+                                            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Sale</th>
+                                            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Commission</th>
+                                            <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {myTrans.map(t => (
+                                            <tr key={t.id}>
+                                                <td className="px-4 py-3 text-gray-800">{t.date}</td>
+                                                <td className="px-4 py-3 text-gray-800 font-medium">{t.productName}</td>
+                                                <td className="px-4 py-3 text-right text-gray-600">{t.quantity}</td>
+                                                <td className="px-4 py-3 text-right text-gray-800">${t.amount.toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-right font-semibold text-blue-600">${t.commission.toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${t.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>
+                                                        {t.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- ADMIN DASHBOARD ---
+    const stats = getFilteredStats();
+    
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <nav className="bg-white shadow-sm border-b">
+                <div className="max-w-7xl mx-auto px-4 py-4">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                            <DollarSign className="w-8 h-8 text-blue-600 mr-2" />
+                            <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
+                        </div>
+                        <button onClick={handleLogout} className="px-4 py-2 text-sm text-gray-600">Logout</button>
+                    </div>
+                </div>
+            </nav>
+            <div className="max-w-7xl mx-auto px-4 py-8">
+                <div className="flex gap-2 mb-6 border-b overflow-x-auto">
+                    {['dashboard', 'salespeople', 'transactions', 'payments'].map(tab => (
+                        <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'}`}>
+                            {tab === 'dashboard' && <TrendingUp className="inline w-4 h-4 mr-2" />}
+                            {tab === 'salespeople' && <Users className="inline w-4 h-4 mr-2" />}
+                            {tab === 'transactions' && <History className="inline w-4 h-4 mr-2" />}
+                            {tab === 'payments' && <DollarSign className="inline w-4 h-4 mr-2" />}
+                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        </button>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                </div>
+
+                {activeTab === 'dashboard' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <div className="flex flex-wrap items-center gap-4 mb-4">
+                                <h3 className="text-lg font-semibold">Filter by Date</h3>
+                                <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="px-4 py-2 border rounded-lg">
+                                    <option value="all">All Time</option>
+                                    <option value="month">Specific Month</option>
+                                    <option value="year">Specific Year</option>
+                                </select>
+                                {dateFilter === 'month' && <input type="month" value={customMonth} onChange={(e) => setCustomMonth(e.target.value)} className="px-4 py-2 border rounded-lg" />}
+                                {dateFilter === 'year' && <input type="number" value={customYear} onChange={(e) => setCustomYear(e.target.value)} placeholder="YYYY" min="2020" max="2100" className="px-4 py-2 border rounded-lg w-32" />}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <p className="text-gray-600 text-sm">Total Sales</p>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">${stats.totalSales.toFixed(2)}</p>
+                                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <p className="text-gray-600 text-sm">Commissions</p>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">${stats.totalCommissions.toFixed(2)}</p>
+                                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <p className="text-gray-600 text-sm">Pending</p>
+                                <p className="text-3xl font-bold text-orange-600 mt-2">${stats.pendingPayments.toFixed(2)}</p>
+                                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <p className="text-gray-600 text-sm">Transactions</p>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">{stats.transactionCount}</p>
+                                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
+                            </div>
+                        </div>
+                        {transactions.length > 0 && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <h3 className="text-lg font-semibold mb-4">Top Performers</h3>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart data={getTopPerformers().slice(0, 5)} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis type="number" />
+                                                <YAxis dataKey="name" type="category" />
+                                                <Tooltip formatter={(v) => [`$${v.toFixed(2)}`, 'Commission']} />
+                                                <Bar dataKey="totalCommission" fill="#3b82f6" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <h3 className="text-lg font-semibold mb-4">Monthly Trends</h3>
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <LineChart data={getMonthlyData()}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="month" />
+                                                <YAxis />
+                                                <Tooltip formatter={(v) => `$${v.toFixed(2)}`} />
+                                                <Legend />
+                                                <Line type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={2} />
+                                                <Line type="monotone" dataKey="commissions" stroke="#10b981" strokeWidth={2} />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-lg shadow p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold">Performance Summary</h3>
+                                        <button onClick={exportToCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm">
+                                            <Download className="w-4 h-4 mr-2" />Export
+                                        </button>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
+                                                    <th className="px-4 py-3 text-left text-sm font-medium">Code</th>
+                                                    <th className="px-4 py-3 text-right text-sm font-medium">Sales</th>
+                                                    <th className="px-4 py-3 text-right text-sm font-medium">Count</th>
+                                                    <th className="px-4 py-3 text-right text-sm font-medium">Total</th>
+                                                    <th className="px-4 py-3 text-right text-sm font-medium">Pending</th>
+                                                    <th className="px-4 py-3 text-right text-sm font-medium">Paid</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {getTopPerformers().map(sp => (
+                                                    <tr key={sp.id}>
+                                                        <td className="px-4 py-3">{sp.name}</td>
+                                                        <td className="px-4 py-3 font-mono text-sm">{sp.code}</td>
+                                                        <td className="px-4 py-3 text-right">${sp.totalSales.toFixed(2)}</td>
+                                                        <td className="px-4 py-3 text-right">{sp.count}</td>
+                                                        <td className="px-4 py-3 text-right font-semibold">${sp.totalCommission.toFixed(2)}</td>
+                                                        <td className="px-4 py-3 text-right text-orange-600">${sp.pendingCommission.toFixed(2)}</td>
+                                                        <td className="px-4 py-3 text-right text-green-600">${sp.paidCommission.toFixed(2)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {transactions.length === 0 && (
+                            <div className="bg-white rounded-lg shadow p-12 text-center">
+                                <History className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                                <h3 className="text-xl font-semibold mb-2">No Transactions</h3>
+                                <p className="text-gray-600">Add salespeople and record transactions</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+                
+                {/* --- SALESPEOPLE MANAGEMENT --- */}
+                {activeTab === 'salespeople' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">Add Salesperson</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                                <input type="text" placeholder="Full Name" value={newSalesperson.name} onChange={(e) => setNewSalesperson({...newSalesperson, name: e.target.value})} className="px-4 py-2 border rounded-lg" />
+                                <div className="flex gap-2">
+                                    <input type="text" placeholder="CODE" value={newSalesperson.code} onChange={(e) => setNewSalesperson({...newSalesperson, code: e.target.value.toUpperCase()})} className="flex-1 px-4 py-2 border rounded-lg" />
+                                    <button onClick={generateCode} className="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Gen</button>
+                                </div>
+                                <input type="number" placeholder="%" value={newSalesperson.commission} onChange={(e) => setNewSalesperson({...newSalesperson, commission: e.target.value})} className="px-4 py-2 border rounded-lg" step="0.1" />
+                                <input type="email" placeholder="Email" value={newSalesperson.email} onChange={(e) => setNewSalesperson({...newSalesperson, email: e.target.value})} className="px-4 py-2 border rounded-lg" />
+                                <button onClick={addSalesperson} className="md:col-span-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                                    <Plus className="w-4 h-4 mr-2" />Add
+                                </button>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">Salespeople ({salespeople.length})</h3>
+                            {salespeople.length === 0 ? (
+                                <p className="text-gray-600 text-center py-8">No salespeople yet</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Code</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Commission</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {salespeople.map(sp => (
+                                                <tr key={sp.id}>
+                                                    {editingSalesperson && editingSalesperson.id === sp.id ? (
+                                                        <>
+                                                            <td className="px-4 py-3"><input type="text" value={editingSalesperson.name} onChange={(e) => setEditingSalesperson({...editingSalesperson, name: e.target.value})} className="px-2 py-1 border rounded w-full" /></td>
+                                                            <td className="px-4 py-3"><input type="text" value={editingSalesperson.code} onChange={(e) => setEditingSalesperson({...editingSalesperson, code: e.target.value.toUpperCase()})} className="px-2 py-1 border rounded w-full" /></td>
+                                                            <td className="px-4 py-3"><input type="number" value={editingSalesperson.commission} onChange={(e) => setEditingSalesperson({...editingSalesperson, commission: e.target.value})} className="px-2 py-1 border rounded w-24" step="0.1" /></td>
+                                                            <td className="px-4 py-3"><input type="email" value={editingSalesperson.email} onChange={(e) => setEditingSalesperson({...editingSalesperson, email: e.target.value})} className="px-2 py-1 border rounded w-full" /></td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <button onClick={saveEditSalesperson} className="text-green-600 hover:text-green-700 mr-3"><Check className="w-5 h-5 inline" /></button>
+                                                                <button onClick={() => setEditingSalesperson(null)} className="text-gray-600 hover:text-gray-700"><X className="w-5 h-5 inline" /></button>
+                                                            </td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <td className="px-4 py-3">{sp.name}</td>
+                                                            <td className="px-4 py-3 font-mono text-sm">{sp.code}</td>
+                                                            <td className="px-4 py-3">{sp.commission}%</td>
+                                                            <td className="px-4 py-3 text-sm text-gray-600">{sp.email || '-'}</td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <button onClick={() => setEditingSalesperson(sp)} className="text-blue-600 hover:text-blue-700 mr-3"><Edit2 className="w-4 h-4 inline" /></button>
+                                                                <button onClick={() => deleteSalesperson(sp.id)} className="text-red-600 hover:text-red-700"><Trash2 className="w-4 h-4 inline" /></button>
+                                                            </td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                
+                {/* --- TRANSACTIONS MANAGEMENT --- */}
+                {activeTab === 'transactions' && (
+                    <div className="space-y-6">
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">Add Transaction</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Salesperson</label>
+                                    <select value={newTransaction.code} onChange={(e) => setNewTransaction({...newTransaction, code: e.target.value})} className="w-full px-4 py-2 border rounded-lg">
+                                        <option value="">Select</option>
+                                        {salespeople.map(sp => (
+                                            <option key={sp.id} value={sp.code}>{sp.name} ({sp.code}) - {sp.commission}%</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Product Name</label>
+                                    <input type="text" placeholder="Product" value={newTransaction.productName} onChange={(e) => setNewTransaction({...newTransaction, productName: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Quantity</label>
+                                    <input type="number" placeholder="Qty" value={newTransaction.quantity} onChange={(e) => handleQuantityOrPriceChange('quantity', e.target.value)} className="w-full px-4 py-2 border rounded-lg" min="1" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Unit Price ($)</label>
+                                    <input type="number" placeholder="Price" value={newTransaction.unitPrice} onChange={(e) => handleQuantityOrPriceChange('unitPrice', e.target.value)} className="w-full px-4 py-2 border rounded-lg" step="0.01" min="0" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Total ($)</label>
+                                    <input type="number" placeholder="Total" value={newTransaction.amount} onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})} className="w-full px-4 py-2 border rounded-lg bg-gray-50" step="0.01" min="0" readOnly />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-gray-600 mb-1">Date</label>
+                                    <input type="date" value={newTransaction.date} onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
+                                </div>
+                                <div className="flex items-end">
+                                    <button onClick={addTransaction} className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                                        <Plus className="w-4 h-4 mr-2" />Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">All Transactions ({transactions.length})</h3>
+                            {transactions.length === 0 ? (
+                                <p className="text-gray-600 text-center py-8">No transactions yet</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Salesperson</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Qty</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Sale</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Commission</th>
+                                                <th className="px-4 py-3 text-center text-sm font-medium">Status</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {transactions.map(t => (
+                                                <tr key={t.id}>
+                                                    <td className="px-4 py-3 text-sm">{t.date}</td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="text-sm font-medium">{t.salespersonName}</div>
+                                                        <div className="text-xs text-gray-500 font-mono">{t.code}</div>
+                                                    </td>
+                                                    <td className="px-4 py-3">{t.productName}</td>
+                                                    <td className="px-4 py-3 text-right">{t.quantity}</td>
+                                                    <td className="px-4 py-3 text-right">${t.amount.toFixed(2)}</td>
+                                                    <td className="px-4 py-3 text-right font-semibold">${t.commission.toFixed(2)} <span className="text-xs text-gray-500">({t.commissionRate}%)</span></td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <button onClick={() => t.paymentStatus === 'pending' ? markAsPaid(t.id) : markAsPending(t.id)} className={`px-3 py-1 rounded-full text-xs font-medium ${t.paymentStatus === 'paid' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'}`}>
+                                                            {t.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button onClick={() => deleteTransaction(t.id)} className="text-red-600 hover:text-red-700"><Trash2 className="w-4 h-4 inline" /></button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* --- PAYMENTS MANAGEMENT --- */}
+                {activeTab === 'payments' && (
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <p className="text-gray-600 text-sm">Total Paid</p>
+                                <p className="text-3xl font-bold text-green-600 mt-2">${payments.reduce((s, p) => s + p.amount, 0).toFixed(2)}</p>
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <p className="text-gray-600 text-sm">Total Pending</p>
+                                <p className="text-3xl font-bold text-orange-600 mt-2">${transactions.filter(t => t.paymentStatus === 'pending').reduce((s, t) => s + t.commission, 0).toFixed(2)}</p>
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <p className="text-gray-600 text-sm">Payment Records</p>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">{payments.length}</p>
+                            </div>
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">Pending Payments</h3>
+                            {transactions.filter(t => t.paymentStatus === 'pending').length === 0 ? (
+                                <p className="text-gray-600 text-center py-8">No pending payments</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Salesperson</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Commission Due</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {transactions.filter(t => t.paymentStatus === 'pending').map(t => (
+                                                <tr key={t.id}>
+                                                    <td className="px-4 py-3">
+                                                        <div className="font-medium">{t.salespersonName}</div>
+                                                        <div className="text-xs text-gray-500 font-mono">{t.code}</div>
+                                                    </td>
+                                                    <td className="px-4 py-3">{t.productName}</td>
+                                                    <td className="px-4 py-3 text-sm">{t.date}</td>
+                                                    <td className="px-4 py-3 text-right font-semibold text-orange-600">${t.commission.toFixed(2)}</td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button onClick={() => markAsPaid(t.id)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">Mark Paid</button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">Payment History</h3>
+                            {payments.length === 0 ? (
+                                <p className="text-gray-600 text-center py-8">No payments made yet</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Payment Date</th>
+                                                <th className="px-4 py-3 text-left text-sm font-medium">Salesperson</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y">
+                                            {payments.map(p => (
+                                                <tr key={p.id}>
+                                                    <td className="px-4 py-3 text-sm">{new Date(p.date).toLocaleDateString()}</td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="font-medium">{p.salespersonName}</div>
+                                                        <div className="text-xs text-gray-500 font-mono">{p.code}</div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-semibold text-green-600">${p.amount.toFixed(2)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
-      </div>
     );
-  }
-
-  const stats = getFilteredStats();
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <DollarSign className="w-8 h-8 text-blue-600 mr-2" />
-              <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
-            </div>
-            <button onClick={handleLogout} className="px-4 py-2 text-sm text-gray-600">Logout</button>
-          </div>
-        </div>
-      </nav>
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex gap-2 mb-6 border-b overflow-x-auto">
-          {['dashboard', 'salespeople', 'transactions', 'payments'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 font-medium whitespace-nowrap ${activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'}`}>
-              {tab === 'dashboard' && <TrendingUp className="inline w-4 h-4 mr-2" />}
-              {tab === 'salespeople' && <Users className="inline w-4 h-4 mr-2" />}
-              {tab === 'transactions' && <History className="inline w-4 h-4 mr-2" />}
-              {tab === 'payments' && <DollarSign className="inline w-4 h-4 mr-2" />}
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex flex-wrap items-center gap-4 mb-4">
-                <h3 className="text-lg font-semibold">Filter by Date</h3>
-                <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="px-4 py-2 border rounded-lg">
-                  <option value="all">All Time</option>
-                  <option value="month">Specific Month</option>
-                  <option value="year">Specific Year</option>
-                </select>
-                {dateFilter === 'month' && <input type="month" value={customMonth} onChange={(e) => setCustomMonth(e.target.value)} className="px-4 py-2 border rounded-lg" />}
-                {dateFilter === 'year' && <input type="number" value={customYear} onChange={(e) => setCustomYear(e.target.value)} placeholder="YYYY" min="2020" max="2100" className="px-4 py-2 border rounded-lg w-32" />}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600 text-sm">Total Sales</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">${stats.totalSales.toFixed(2)}</p>
-                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
-              </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600 text-sm">Commissions</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">${stats.totalCommissions.toFixed(2)}</p>
-                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
-              </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600 text-sm">Pending</p>
-                <p className="text-3xl font-bold text-orange-600 mt-2">${stats.pendingPayments.toFixed(2)}</p>
-                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
-              </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600 text-sm">Transactions</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">{stats.transactionCount}</p>
-                {dateFilter !== 'all' && <p className="text-xs text-gray-500 mt-1">{dateFilter === 'month' ? customMonth : customYear}</p>}
-              </div>
-            </div>
-            {transactions.length > 0 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Top Performers</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={getTopPerformers().slice(0, 5)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip formatter={(v) => `${v.toFixed(2)}`} />
-                        <Bar dataKey="totalCommission" fill="#3b82f6" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Monthly Trends</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={getMonthlyData()}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip formatter={(v) => `${v.toFixed(2)}`} />
-                        <Legend />
-                        <Line type="monotone" dataKey="sales" stroke="#3b82f6" strokeWidth={2} />
-                        <Line type="monotone" dataKey="commissions" stroke="#10b981" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Performance Summary</h3>
-                    <button onClick={exportToCSV} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center text-sm">
-                      <Download className="w-4 h-4 mr-2" />Export
-                    </button>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium">Code</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">Sales</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">Count</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">Total</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">Pending</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium">Paid</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {getTopPerformers().map(sp => (
-                          <tr key={sp.id}>
-                            <td className="px-4 py-3">{sp.name}</td>
-                            <td className="px-4 py-3 font-mono text-sm">{sp.code}</td>
-                            <td className="px-4 py-3 text-right">${sp.totalSales.toFixed(2)}</td>
-                            <td className="px-4 py-3 text-right">{sp.count}</td>
-                            <td className="px-4 py-3 text-right font-semibold">${sp.totalCommission.toFixed(2)}</td>
-                            <td className="px-4 py-3 text-right text-orange-600">${sp.pendingCommission.toFixed(2)}</td>
-                            <td className="px-4 py-3 text-right text-green-600">${sp.paidCommission.toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-            {transactions.length === 0 && (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <History className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No Transactions</h3>
-                <p className="text-gray-600">Add salespeople and record transactions</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'salespeople' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Add Salesperson</h3>
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <input type="text" placeholder="Full Name" value={newSalesperson.name} onChange={(e) => setNewSalesperson({...newSalesperson, name: e.target.value})} className="px-4 py-2 border rounded-lg" />
-                <div className="flex gap-2">
-                  <input type="text" placeholder="CODE" value={newSalesperson.code} onChange={(e) => setNewSalesperson({...newSalesperson, code: e.target.value.toUpperCase()})} className="flex-1 px-4 py-2 border rounded-lg" />
-                  <button onClick={generateCode} className="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Gen</button>
-                </div>
-                <input type="number" placeholder="%" value={newSalesperson.commission} onChange={(e) => setNewSalesperson({...newSalesperson, commission: e.target.value})} className="px-4 py-2 border rounded-lg" step="0.1" />
-                <input type="email" placeholder="Email" value={newSalesperson.email} onChange={(e) => setNewSalesperson({...newSalesperson, email: e.target.value})} className="px-4 py-2 border rounded-lg" />
-                <button onClick={addSalesperson} className="md:col-span-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center">
-                  <Plus className="w-4 h-4 mr-2" />Add
-                </button>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Salespeople ({salespeople.length})</h3>
-              {salespeople.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No salespeople yet</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Code</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Commission</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {salespeople.map(sp => (
-                        <tr key={sp.id}>
-                          {editingSalesperson && editingSalesperson.id === sp.id ? (
-                            <>
-                              <td className="px-4 py-3"><input type="text" value={editingSalesperson.name} onChange={(e) => setEditingSalesperson({...editingSalesperson, name: e.target.value})} className="px-2 py-1 border rounded w-full" /></td>
-                              <td className="px-4 py-3"><input type="text" value={editingSalesperson.code} onChange={(e) => setEditingSalesperson({...editingSalesperson, code: e.target.value.toUpperCase()})} className="px-2 py-1 border rounded w-full" /></td>
-                              <td className="px-4 py-3"><input type="number" value={editingSalesperson.commission} onChange={(e) => setEditingSalesperson({...editingSalesperson, commission: e.target.value})} className="px-2 py-1 border rounded w-24" step="0.1" /></td>
-                              <td className="px-4 py-3"><input type="email" value={editingSalesperson.email} onChange={(e) => setEditingSalesperson({...editingSalesperson, email: e.target.value})} className="px-2 py-1 border rounded w-full" /></td>
-                              <td className="px-4 py-3 text-right">
-                                <button onClick={saveEditSalesperson} className="text-green-600 hover:text-green-700 mr-3"><Check className="w-5 h-5 inline" /></button>
-                                <button onClick={() => setEditingSalesperson(null)} className="text-gray-600 hover:text-gray-700"><X className="w-5 h-5 inline" /></button>
-                              </td>
-                            </>
-                          ) : (
-                            <>
-                              <td className="px-4 py-3">{sp.name}</td>
-                              <td className="px-4 py-3 font-mono text-sm">{sp.code}</td>
-                              <td className="px-4 py-3">{sp.commission}%</td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{sp.email || '-'}</td>
-                              <td className="px-4 py-3 text-right">
-                                <button onClick={() => setEditingSalesperson(sp)} className="text-blue-600 hover:text-blue-700 mr-3"><Edit2 className="w-4 h-4 inline" /></button>
-                                <button onClick={() => deleteSalesperson(sp.id)} className="text-red-600 hover:text-red-700"><Trash2 className="w-4 h-4 inline" /></button>
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'transactions' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Add Transaction</h3>
-              <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Salesperson</label>
-                  <select value={newTransaction.code} onChange={(e) => setNewTransaction({...newTransaction, code: e.target.value})} className="w-full px-4 py-2 border rounded-lg">
-                    <option value="">Select</option>
-                    {salespeople.map(sp => (
-                      <option key={sp.id} value={sp.code}>{sp.name} ({sp.code}) - {sp.commission}%</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Product Name</label>
-                  <input type="text" placeholder="Product" value={newTransaction.productName} onChange={(e) => setNewTransaction({...newTransaction, productName: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Quantity</label>
-                  <input type="number" placeholder="Qty" value={newTransaction.quantity} onChange={(e) => handleQuantityOrPriceChange('quantity', e.target.value)} className="w-full px-4 py-2 border rounded-lg" min="1" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Unit Price ($)</label>
-                  <input type="number" placeholder="Price" value={newTransaction.unitPrice} onChange={(e) => handleQuantityOrPriceChange('unitPrice', e.target.value)} className="w-full px-4 py-2 border rounded-lg" step="0.01" min="0" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Total ($)</label>
-                  <input type="number" placeholder="Total" value={newTransaction.amount} onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})} className="w-full px-4 py-2 border rounded-lg bg-gray-50" step="0.01" min="0" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-600 mb-1">Date</label>
-                  <input type="date" value={newTransaction.date} onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})} className="w-full px-4 py-2 border rounded-lg" />
-                </div>
-                <div className="flex items-end">
-                  <button onClick={addTransaction} className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center">
-                    <Plus className="w-4 h-4 mr-2" />Add
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">All Transactions ({transactions.length})</h3>
-              {transactions.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No transactions yet</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Salesperson</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Qty</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Sale</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Commission</th>
-                        <th className="px-4 py-3 text-center text-sm font-medium">Status</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {transactions.map(t => (
-                        <tr key={t.id}>
-                          <td className="px-4 py-3 text-sm">{t.date}</td>
-                          <td className="px-4 py-3">
-                            <div className="text-sm font-medium">{t.salespersonName}</div>
-                            <div className="text-xs text-gray-500 font-mono">{t.code}</div>
-                          </td>
-                          <td className="px-4 py-3">{t.productName}</td>
-                          <td className="px-4 py-3 text-right">{t.quantity}</td>
-                          <td className="px-4 py-3 text-right">${t.amount.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right font-semibold">${t.commission.toFixed(2)} <span className="text-xs text-gray-500">({t.commissionRate}%)</span></td>
-                          <td className="px-4 py-3 text-center">
-                            <button onClick={() => t.paymentStatus === 'pending' ? markAsPaid(t.id) : markAsPending(t.id)} className={`px-3 py-1 rounded-full text-xs font-medium ${t.paymentStatus === 'paid' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'}`}>
-                              {t.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
-                            </button>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <button onClick={() => deleteTransaction(t.id)} className="text-red-600 hover:text-red-700"><Trash2 className="w-4 h-4 inline" /></button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'payments' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600 text-sm">Total Paid</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">${payments.reduce((s, p) => s + p.amount, 0).toFixed(2)}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600 text-sm">Total Pending</p>
-                <p className="text-3xl font-bold text-orange-600 mt-2">${transactions.filter(t => t.paymentStatus === 'pending').reduce((s, t) => s + t.commission, 0).toFixed(2)}</p>
-              </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-600 text-sm">Payment Records</p>
-                <p className="text-3xl font-bold text-gray-800 mt-2">{payments.length}</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Pending Payments</h3>
-              {transactions.filter(t => t.paymentStatus === 'pending').length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No pending payments</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Salesperson</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Product</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Commission Due</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {transactions.filter(t => t.paymentStatus === 'pending').map(t => (
-                        <tr key={t.id}>
-                          <td className="px-4 py-3">
-                            <div className="font-medium">{t.salespersonName}</div>
-                            <div className="text-xs text-gray-500 font-mono">{t.code}</div>
-                          </td>
-                          <td className="px-4 py-3">{t.productName}</td>
-                          <td className="px-4 py-3 text-sm">{t.date}</td>
-                          <td className="px-4 py-3 text-right font-semibold text-orange-600">${t.commission.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right">
-                            <button onClick={() => markAsPaid(t.id)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">Mark Paid</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold mb-4">Payment History</h3>
-              {payments.length === 0 ? (
-                <p className="text-gray-600 text-center py-8">No payments made yet</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Payment Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium">Salesperson</th>
-                        <th className="px-4 py-3 text-right text-sm font-medium">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {payments.map(p => (
-                        <tr key={p.id}>
-                          <td className="px-4 py-3 text-sm">{new Date(p.date).toLocaleDateString()}</td>
-                          <td className="px-4 py-3">
-                            <div className="font-medium">{p.salespersonName}</div>
-                            <div className="text-xs text-gray-500 font-mono">{p.code}</div>
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-green-600">${p.amount.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
 }
 
+// 4. Final Render Call
 ReactDOM.render(<CommissionTracker />, document.getElementById('root'));
-    </script>
+</script>
 </body>
 </html>
