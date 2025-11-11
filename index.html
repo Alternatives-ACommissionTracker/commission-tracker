@@ -9,9 +9,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.min.js"></script>
-    
+       
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
@@ -19,7 +17,6 @@
     <script type="text/babel">
 // 1. IMPORTS & ICONS (Required from 'lucide-react')
 const { useState, useEffect } = React;
-// Mock icons - In a real setup, these would be imported from lucide-react (RESTORE THIS ENTIRE BLOCK)
 
 // --- START FULL MOCK ICONS ---
 const DollarSign = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM8 14h8m-4-8v8m0-8a4 4 0 0 1 4 4m-4-4a4 4 0 0 0-4 4"/></svg>;
@@ -34,13 +31,13 @@ const Trash2 = ({ className }) => <svg className={className} fill="none" stroke=
 const Check = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>;
 const X = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>;
 const Download = ({ className }) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>;
-
 // --- END FULL MOCK ICONS ---
-        
+
 // Dummy variable to prevent ReferenceErrors for Recharts components
 const Recharts = {};
-        
+
 // 2. MAIN COMPONENT DEFINITION
+// ... rest of the code ...
 const CommissionTracker = () => {
     // --- State Initialization ---
     const [salespeople, setSalespeople] = useState(() => JSON.parse(localStorage.getItem('salespeople')) || [
